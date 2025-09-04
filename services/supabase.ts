@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { Staff, Patient, Role, User } from '../types';
 
@@ -122,20 +123,39 @@ const createHybridSupabaseClient = () => {
       const foundUser = MOCK_STAFF.find(staff => staff.email === email && staff.password === password);
       if (foundUser) {
         currentUser = { id: foundUser.id, name: foundUser.name, email: foundUser.email, role: foundUser.role };
+        localStorage.setItem('supabase.mock.auth.user', JSON.stringify(currentUser));
         return currentUser;
       }
       currentUser = null;
+      localStorage.removeItem('supabase.mock.auth.user');
       return null;
     },
     signOut: async () => {
       console.log('[Supabase Mock] signOut');
       await new Promise(res => setTimeout(res, 100));
       currentUser = null;
+      localStorage.removeItem('supabase.mock.auth.user');
     },
     getUser: async (): Promise<User | null> => {
-      console.log('[Supabase Mock] getUser');
-      await new Promise(res => setTimeout(res, 100));
-      return currentUser;
+        console.log('[Supabase Mock] getUser');
+        await new Promise(res => setTimeout(res, 100));
+        
+        if (currentUser) {
+            return currentUser;
+        }
+
+        const sessionUser = localStorage.getItem('supabase.mock.auth.user');
+        if (sessionUser) {
+            try {
+                currentUser = JSON.parse(sessionUser) as User;
+                return currentUser;
+            } catch (e) {
+                console.error('Failed to parse user from localStorage', e);
+                localStorage.removeItem('supabase.mock.auth.user');
+                return null;
+            }
+        }
+      return null;
     },
   };
 
