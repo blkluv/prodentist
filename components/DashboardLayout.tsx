@@ -26,7 +26,7 @@ const DashboardLayout = () => {
       <Sidebar isOpen={isSidebarOpen} onClose={handleCloseSidebar} />
       <div className="flex flex-col md:pl-[220px] lg:pl-[280px]">
         <Header onMenuClick={handleToggleSidebar} />
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-muted/40">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-muted/40 min-h-screen">
           <Outlet />
         </main>
       </div>

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import { User, Role } from '../types';
 import { supabase } from '../services/supabase';
 import { useNavigate } from 'react-router-dom';
@@ -19,43 +19,50 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    setLoading(true);
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        const { data: staffProfile, error } = await supabase
-          .from('staff')
-          .select('name, role')
-          .eq('id', session.user.id)
-          .maybeSingle(); // FIX: Use maybeSingle() to prevent error if no profile is found.
+    // onAuthStateChange is called once on init with the current session.
+    // This will handle the initial session check on page load/refresh.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        if (session?.user) {
+            // A session exists. Fetch the associated profile from the 'staff' table.
+            const { data: staffProfile, error } = await supabase
+                .from('staff')
+                .select('name, role')
+                .eq('id', session.user.id)
+                .maybeSingle();
 
-        if (error) {
-          console.error("Error fetching staff profile:", error.message);
-          await supabase.auth.signOut();
-          setUser(null);
-        } else if (staffProfile) {
-          const fullUser: User = {
-            id: session.user.id,
-            email: session.user.email!,
-            name: staffProfile.name,
-            role: staffProfile.role as Role,
-          };
-          setUser(fullUser);
+            if (error) {
+                console.error("Error fetching staff profile on auth change:", error.message);
+                setUser(null);
+            } else if (staffProfile) {
+                // Profile found, set the user state.
+                setUser({
+                    id: session.user.id,
+                    email: session.user.email!,
+                    name: staffProfile.name,
+                    role: staffProfile.role as Role,
+                });
+            } else {
+                // Edge case: user exists in Supabase Auth but not in our 'staff' table.
+                // This can happen if profile insertion fails during registration.
+                // Log them out to prevent a broken state.
+                console.warn("Auth user found without a staff profile. Forcing sign-out.");
+                await supabase.auth.signOut();
+                setUser(null);
+            }
         } else {
-          // Handle case where user exists in auth but not in staff table
-          console.warn("No staff profile found for authenticated user. Logging out.");
-          await supabase.auth.signOut();
-          setUser(null);
+            // No session, or user signed out.
+            setUser(null);
         }
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
+        // Whether a user was found or not, the check is complete.
+        setLoading(false);
     });
 
+    // Cleanup the subscription when the component unmounts.
     return () => {
-      subscription.unsubscribe();
+        subscription.unsubscribe();
     };
-  }, []);
+}, []);
+
 
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -92,8 +99,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .insert({ id: data.user.id, name, email, role: Role.ASSISTANT });
 
     if (insertError) {
-      // In a production app, you might want to handle this more gracefully,
-      // perhaps by deleting the created auth user.
       throw new Error(`User created, but failed to create staff profile: ${insertError.message}`);
     }
   };

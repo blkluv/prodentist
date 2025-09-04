@@ -21,10 +21,10 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
   return (
     <div className={cn(
-        "fixed inset-y-0 left-0 z-50 h-full w-[220px] lg:w-[280px] border-r bg-white transition-transform duration-300 ease-in-out md:translate-x-0",
+        "fixed inset-y-0 left-0 z-50 h-full w-[220px] lg:w-[280px] bg-white transition-transform duration-300 ease-in-out md:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
     )}>
-      <div className="flex h-full max-h-screen flex-col gap-2">
+      <div className="flex h-full max-h-screen flex-col">
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
           <NavLink to="/" className="flex items-center gap-2 font-semibold">
             <StethoscopeIcon className="h-6 w-6" />
@@ -35,7 +35,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             <span className="sr-only">Close menu</span>
           </Button>
         </div>
-        <div className="flex-1">
+        <div className="flex-1 border-r pt-2">
           <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
             <NavLink to="/dashboard" end className={navLinkClasses} onClick={onClose}>
               <HomeIcon className="h-4 w-4" />

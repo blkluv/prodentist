@@ -2,14 +2,14 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import LoadingSpinner from './LoadingSpinner';
 
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
-    // You can add a loading spinner here
-    return <div>Loading...</div>;
+    return <LoadingSpinner />;
   }
 
   if (!user) {
