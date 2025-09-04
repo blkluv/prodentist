@@ -1,7 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { User, Role } from '../types';
 import { supabase } from '../services/supabase';
-import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -16,14 +15,14 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    // onAuthStateChange is called once on init with the current session.
-    // This will handle the initial session check on page load/refresh.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // This function checks for an active session and fetches the user's profile.
+    const checkUser = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        
         if (session?.user) {
-            // A session exists. Fetch the associated profile from the 'staff' table.
+            // If a session exists, fetch the profile from the 'staff' table.
             const { data: staffProfile, error } = await supabase
                 .from('staff')
                 .select('name, role')
@@ -31,30 +30,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 .maybeSingle();
 
             if (error) {
-                console.error("Error fetching staff profile on auth change:", error.message);
+                console.error("Error fetching staff profile on session check:", error.message);
                 setUser(null);
-            } else if (staffProfile) {
-                // Profile found, set the user state.
+            } else if (staffProfile && session.user.email) {
+                // If profile is found, set the user state.
                 setUser({
                     id: session.user.id,
-                    email: session.user.email!,
+                    email: session.user.email,
                     name: staffProfile.name,
                     role: staffProfile.role as Role,
                 });
             } else {
-                // Edge case: user exists in Supabase Auth but not in our 'staff' table.
-                // This can happen if profile insertion fails during registration.
-                // Log them out to prevent a broken state.
-                console.warn("Auth user found without a staff profile. Forcing sign-out.");
-                await supabase.auth.signOut();
+                // This can happen if the staff profile creation failed after sign up.
+                // Treat as not logged in.
                 setUser(null);
             }
         } else {
-            // No session, or user signed out.
+            // No session, so no user.
             setUser(null);
         }
-        // Whether a user was found or not, the check is complete.
         setLoading(false);
+    };
+
+    // Run the check on initial component mount.
+    checkUser();
+
+    // Set up a listener for authentication state changes (login/logout).
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, _session) => {
+        // When a user signs in or out, the session changes. Re-run the check.
+        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+            checkUser();
+        }
     });
 
     // Cleanup the subscription when the component unmounts.
@@ -76,8 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (error) {
       console.error("Error logging out:", error);
     }
-    setUser(null);
-    navigate('/login');
+    // The onAuthStateChange listener will handle setting user to null.
   };
 
   const register = async (name: string, email: string, password: string) => {
