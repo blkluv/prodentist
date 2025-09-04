@@ -73,47 +73,70 @@ const StaffPage = () => {
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <div>
             <CardTitle>Staff Management</CardTitle>
             <CardDescription>Add, edit, or remove staff members.</CardDescription>
           </div>
-          <Button onClick={handleOpenModal}>
+          <Button onClick={handleOpenModal} className="w-full sm:w-auto">
             <PlusCircleIcon className="mr-2 h-4 w-4" /> Add Staff
           </Button>
         </div>
       </CardHeader>
       <CardContent>
         {loading ? <p>Loading staff...</p> : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Created At</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {staffList.map((staff) => (
-              <TableRow key={staff.id}>
-                <TableCell className="font-medium">{staff.name}</TableCell>
-                <TableCell>{staff.email}</TableCell>
-                <TableCell className="capitalize">{staff.role}</TableCell>
-                <TableCell>{new Date(staff.created_at).toLocaleDateString()}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(staff)}>Edit</Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            <>
+            {/* Desktop Table */}
+            <div className="hidden md:block">
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Created At</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {staffList.map((staff) => (
+                    <TableRow key={staff.id}>
+                        <TableCell className="font-medium">{staff.name}</TableCell>
+                        <TableCell>{staff.email}</TableCell>
+                        <TableCell className="capitalize">{staff.role}</TableCell>
+                        <TableCell>{new Date(staff.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right">
+                        <Button variant="outline" size="sm" onClick={() => handleEdit(staff)}>Edit</Button>
+                        </TableCell>
+                    </TableRow>
+                    ))}
+                </TableBody>
+                </Table>
+            </div>
+            {/* Mobile Cards */}
+            <div className="grid gap-4 md:hidden">
+                {staffList.map((staff) => (
+                    <Card key={staff.id}>
+                        <CardHeader>
+                            <CardTitle>{staff.name}</CardTitle>
+                            <CardDescription>{staff.email}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                             <p className="text-sm"><strong>Role:</strong> <span className="capitalize">{staff.role}</span></p>
+                             <p className="text-sm text-muted-foreground"><strong>Joined:</strong> {new Date(staff.created_at).toLocaleDateString()}</p>
+                        </CardContent>
+                        <div className="flex items-center p-6 pt-0">
+                           <Button variant="outline" size="sm" onClick={() => handleEdit(staff)}>Edit Role</Button>
+                        </div>
+                    </Card>
+                ))}
+            </div>
+          </>
         )}
       </CardContent>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>{editingStaff ? 'Edit Staff' : 'Add New Staff'}</DialogTitle>
             <DialogDescription>
@@ -122,23 +145,23 @@ const StaffPage = () => {
           </DialogHeader>
           <form onSubmit={handleFormSubmit}>
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">Name</Label>
-                <Input id="name" name="name" defaultValue={editingStaff?.name} className="col-span-3" required disabled={!!editingStaff} />
+              <div className="grid gap-2">
+                <Label htmlFor="name">Name</Label>
+                <Input id="name" name="name" defaultValue={editingStaff?.name} required disabled={!!editingStaff} />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="email" className="text-right">Email</Label>
-                <Input id="email" name="email" type="email" defaultValue={editingStaff?.email} className="col-span-3" required disabled={!!editingStaff} />
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" name="email" type="email" defaultValue={editingStaff?.email} required disabled={!!editingStaff} />
               </div>
               {!editingStaff && (
-                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="password" className="text-right">Password</Label>
-                    <Input id="password" name="password" type="password" className="col-span-3" required />
+                 <div className="grid gap-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input id="password" name="password" type="password" required />
                 </div>
               )}
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="role" className="text-right">Role</Label>
-                <Select id="role" name="role" defaultValue={editingStaff?.role || Role.STAFF} className="col-span-3 border border-[#eee] rounded px-2 py-1" required>
+              <div className="grid gap-2">
+                <Label htmlFor="role">Role</Label>
+                <Select id="role" name="role" defaultValue={editingStaff?.role || Role.STAFF} required>
                   <SelectItem value={Role.STAFF}>Staff</SelectItem>
                   <SelectItem value={Role.ADMIN}>Admin</SelectItem>
                 </Select>
