@@ -1,0 +1,5 @@
+{
+  "name": "Supabase Admin Dashboard",
+  "description": "A modern dashboard for managing staff and patients, built with React, TailwindCSS, and shadcn/ui components, connected to a Supabase backend for authentication and data management.",
+  "requestFramePermissions": []
+}
