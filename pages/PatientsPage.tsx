@@ -17,8 +17,13 @@ const PatientsPage = () => {
 
   const fetchPatients = useCallback(async () => {
     setLoading(true);
-    const data = await supabase.from('patients').select();
-    setPatients(data);
+    const { data, error } = await supabase.from('patients').select('*').order('created_at', { ascending: false });
+    if (data) {
+        setPatients(data);
+    }
+    if (error) {
+        console.error('Error fetching patients:', error);
+    }
     setLoading(false);
   }, []);
 
@@ -52,14 +57,20 @@ const PatientsPage = () => {
         address: formData.get('address') as string || null,
     };
     
+    let error;
     if (editingPatient) {
-      await supabase.from('patients').update(editingPatient.id, patientData);
+      ({ error } = await supabase.from('patients').update(patientData).eq('id', editingPatient.id));
     } else {
-      await supabase.from('patients').insert(patientData);
+      ({ error } = await supabase.from('patients').insert(patientData));
     }
-    
-    fetchPatients();
-    handleModalClose();
+
+    if (error) {
+        console.error("Error saving patient:", error);
+        // You could add user-facing error handling here
+    } else {
+        fetchPatients();
+        handleModalClose();
+    }
   };
 
   return (
@@ -143,13 +154,15 @@ const PatientsPage = () => {
           </DialogHeader>
           <form onSubmit={handleFormSubmit}>
             <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="first_name">First Name</Label>
-                <Input id="first_name" name="first_name" defaultValue={editingPatient?.first_name} required />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="last_name">Last Name</Label>
-                <Input id="last_name" name="last_name" defaultValue={editingPatient?.last_name} required />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="first_name">First Name</Label>
+                  <Input id="first_name" name="first_name" defaultValue={editingPatient?.first_name} required />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="last_name">Last Name</Label>
+                  <Input id="last_name" name="last_name" defaultValue={editingPatient?.last_name} required />
+                </div>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>

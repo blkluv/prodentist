@@ -11,9 +11,11 @@ const DashboardPage = () => {
 
     useEffect(() => {
         const fetchStats = async () => {
-            const staffCount = await supabase.from('staff').count();
-            const patientCount = await supabase.from('patients').count();
-            setStats({ staffCount, patientCount });
+            // FIX: The `.count()` method does not exist on the query builder.
+            // The correct way to get the count is to use `select` with the `count` option.
+            const { count: staffCount } = await supabase.from('staff').select('*', { count: 'exact', head: true });
+            const { count: patientCount } = await supabase.from('patients').select('*', { count: 'exact', head: true });
+            setStats({ staffCount: staffCount ?? 0, patientCount: patientCount ?? 0 });
         };
 
         fetchStats();

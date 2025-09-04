@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
@@ -12,7 +13,14 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +29,7 @@ const LoginPage = () => {
     try {
       await login(email, password);
     } catch (err) {
-      setError('Failed to log in. Please check your credentials.');
+      setError('Failed to log in. Please check your credentials or confirm your email.');
     } finally {
       setLoading(false);
     }
@@ -73,6 +81,12 @@ const LoginPage = () => {
                 </Button>
             </div>
             </form>
+            <div className="mt-4 text-center text-sm">
+              Don&apos;t have an account?{" "}
+              <Link to="/register" className="underline">
+                Sign up
+              </Link>
+            </div>
         </CardContent>
         </Card>
     </div>

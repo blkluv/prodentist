@@ -21,7 +21,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
   return (
     <div className={cn(
-        "fixed inset-y-0 left-0 z-50 h-full w-[220px] lg:w-[280px] border-r bg-muted/40 transition-transform duration-300 ease-in-out md:translate-x-0",
+        "fixed inset-y-0 left-0 z-50 h-full w-[220px] lg:w-[280px] border-r bg-white transition-transform duration-300 ease-in-out md:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
     )}>
       <div className="flex h-full max-h-screen flex-col gap-2">

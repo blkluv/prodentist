@@ -1,6 +1,8 @@
 export enum Role {
   ADMIN = 'admin',
-  STAFF = 'staff',
+  DENTIST = 'dentist',
+  ASSISTANT = 'assistant',
+  RECEPTIONIST = 'receptionist',
 }
 
 export interface Staff {
@@ -9,7 +11,6 @@ export interface Staff {
   email: string;
   role: Role;
   created_at: string;
-  password?: string;
 }
 
 export interface Patient {

@@ -5,11 +5,10 @@ import { supabase } from '../services/supabase';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/Table';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '../components/ui/Dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/Dialog';
 import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
 import { Select, SelectItem } from '../components/ui/Select';
-import { PlusCircleIcon } from '../components/Icons';
 
 const StaffPage = () => {
   const { user } = useAuth();
@@ -20,8 +19,13 @@ const StaffPage = () => {
 
   const fetchStaff = useCallback(async () => {
     setLoading(true);
-    const data = await supabase.from('staff').select();
-    setStaffList(data);
+    const { data, error } = await supabase.from('staff').select('*').order('created_at', { ascending: false });
+    if (data) {
+        setStaffList(data);
+    }
+    if (error) {
+        console.error("Error fetching staff:", error);
+    }
     setLoading(false);
   }, []);
 
@@ -34,11 +38,6 @@ const StaffPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleOpenModal = () => {
-    setEditingStaff(null);
-    setIsModalOpen(true);
-  };
-
   const handleModalClose = () => {
     setIsModalOpen(false);
     setEditingStaff(null);
@@ -47,12 +46,13 @@ const StaffPage = () => {
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const staffData = Object.fromEntries(formData.entries()) as unknown as Omit<Staff, 'id' | 'created_at'>;
+    const newRole = formData.get('role') as Role;
     
     if (editingStaff) {
-      await supabase.from('staff').update(editingStaff.id, { role: staffData.role });
-    } else {
-      await supabase.from('staff').insert(staffData);
+      const { error } = await supabase.from('staff').update({ role: newRole }).eq('id', editingStaff.id);
+      if (error) {
+          console.error("Error updating staff role:", error);
+      }
     }
     
     fetchStaff();
@@ -76,11 +76,10 @@ const StaffPage = () => {
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <div>
             <CardTitle>Staff Management</CardTitle>
-            <CardDescription>Add, edit, or remove staff members.</CardDescription>
+            <CardDescription>
+                Manage staff roles. New staff can sign up via the public registration page.
+            </CardDescription>
           </div>
-          <Button onClick={handleOpenModal} className="w-full sm:w-auto">
-            <PlusCircleIcon className="mr-2 h-4 w-4" /> Add Staff
-          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -106,7 +105,7 @@ const StaffPage = () => {
                         <TableCell className="capitalize">{staff.role}</TableCell>
                         <TableCell>{new Date(staff.created_at).toLocaleDateString()}</TableCell>
                         <TableCell className="text-right">
-                        <Button variant="outline" size="sm" onClick={() => handleEdit(staff)}>Edit</Button>
+                        <Button variant="outline" size="sm" onClick={() => handleEdit(staff)}>Edit Role</Button>
                         </TableCell>
                     </TableRow>
                     ))}
@@ -135,45 +134,43 @@ const StaffPage = () => {
         )}
       </CardContent>
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>{editingStaff ? 'Edit Staff' : 'Add New Staff'}</DialogTitle>
-            <DialogDescription>
-              {editingStaff ? 'Update the role for this staff member.' : 'Fill in the details to add a new staff member.'}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleFormSubmit}>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" name="name" defaultValue={editingStaff?.name} required disabled={!!editingStaff} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" defaultValue={editingStaff?.email} required disabled={!!editingStaff} />
-              </div>
-              {!editingStaff && (
-                 <div className="grid gap-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input id="password" name="password" type="password" required />
+      {editingStaff && (
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+                <DialogTitle>Edit Staff Role</DialogTitle>
+                <DialogDescription>
+                Update the role for {editingStaff.name}.
+                </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleFormSubmit}>
+                <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                    <Label htmlFor="name">Name</Label>
+                    <Input id="name" name="name" defaultValue={editingStaff?.name} disabled />
                 </div>
-              )}
-              <div className="grid gap-2">
-                <Label htmlFor="role">Role</Label>
-                <Select id="role" name="role" defaultValue={editingStaff?.role || Role.STAFF} required>
-                  <SelectItem value={Role.STAFF}>Staff</SelectItem>
-                  <SelectItem value={Role.ADMIN}>Admin</SelectItem>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="secondary" onClick={handleModalClose}>Cancel</Button>
-              <Button type="submit">Save changes</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+                <div className="grid gap-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" name="email" type="email" defaultValue={editingStaff?.email} disabled />
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="role">Role</Label>
+                    <Select id="role" name="role" defaultValue={editingStaff?.role || Role.ASSISTANT} required>
+                      <SelectItem value={Role.ADMIN}>Admin</SelectItem>
+                      <SelectItem value={Role.DENTIST}>Dentist</SelectItem>
+                      <SelectItem value={Role.ASSISTANT}>Assistant</SelectItem>
+                      <SelectItem value={Role.RECEPTIONIST}>Receptionist</SelectItem>
+                    </Select>
+                </div>
+                </div>
+                <DialogFooter>
+                <Button type="button" variant="secondary" onClick={handleModalClose}>Cancel</Button>
+                <Button type="submit">Save changes</Button>
+                </DialogFooter>
+            </form>
+            </DialogContent>
+        </Dialog>
+      )}
 
     </Card>
   );
