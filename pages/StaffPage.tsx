@@ -77,7 +77,7 @@ const StaffPage = () => {
           <div>
             <CardTitle>Staff Management</CardTitle>
             <CardDescription>
-                Manage staff roles. New staff can sign up via the public registration page.
+                Manage roles for existing staff members.
             </CardDescription>
           </div>
         </div>
